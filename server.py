@@ -39,9 +39,12 @@ def recvData():
     # play silence
     playStream.write(silenceData)
 
+    # handle out of sequence
     if sequenceNumber > expectedSeqNum:
-      # catch up
       expectedSeqNum = sequenceNumber + 1
+    # handle dropped connection
+    elif sequenceNumber < expectedSeqNum:
+      expectedSeqNum = sequenceNumber
 
 if __name__ == '__main__':
 
