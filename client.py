@@ -80,7 +80,7 @@ if __name__ == '__main__':
   parser.add_argument(
     "--device",
     required=False,
-    default=config('DEVICE_INDEX', cast=int, default=0),
+    default=config('INPUT_DEVICE', cast=int, default=0),
     type=int
   )
 
@@ -118,7 +118,8 @@ if __name__ == '__main__':
       rate=RATE,
       input=True,
       frames_per_buffer=NUMCHUNKS * CHUNK,
-      stream_callback=record
+      stream_callback=record,
+      input_device_index=args.device
     )
 
     logging.info("PyAudio Device Initialized")
