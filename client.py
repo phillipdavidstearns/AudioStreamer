@@ -5,6 +5,7 @@ import pyaudio
 import sys
 import queue
 import logging
+from decouple import config
 
 # signal handler
 def handler(signum, frame):
@@ -45,12 +46,44 @@ if __name__ == '__main__':
 
   # command line arguments
   parser = argparse.ArgumentParser(description="AudioStream client")
-  parser.add_argument("--protocol", required=False, default='udp', choices=['udp', 'tcp'])
-  parser.add_argument("--host", required=False, default="localhost")
-  parser.add_argument("--port", required=False, default=12345)
+
+  parser.add_argument(
+    "--protocol",
+    required=False,
+    default=config('PROTOCOL', cast=str, default='udp'),
+    choices=['udp', 'tcp']
+  )
+
+  parser.add_argument(
+    "--host",
+    required=False,
+    default=config("HOST", cast=str, default="localhost")
+  )
+
+  parser.add_argument(
+    "--port",
+    required=False,
+    default=config('PORT', cast=int, default=6047),
+    type=int
+  )
+
   parser.add_argument("--size", required=False, default=10, type=int, choices=range(10, 151, 10))
-  parser.add_argument("--loglevel", required=False, default=20, type=int, choices=[0,10,20,30,40,50])
-  
+
+  parser.add_argument(
+    "--loglevel",
+    required=False,
+    default=config('LOGLEVEL', cast=int, default=20),
+    type=int,
+    choices=[0,10,20,30,40,50]
+  )
+
+  parser.add_argument(
+    "--device",
+    required=False,
+    default=config('DEVICE_INDEX', cast=int, default=0),
+    type=int
+  )
+
   args = parser.parse_args()
 
   logging.basicConfig(format='[AudioStream CLIENT] - %(levelname)s | %(message)s', level=args.loglevel)
