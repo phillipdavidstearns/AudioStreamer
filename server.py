@@ -61,13 +61,6 @@ if __name__ == '__main__':
   parser=argparse.ArgumentParser(description="AudioStream server")
 
   parser.add_argument(
-    "--protocol",
-    required=False,
-    default=config('PROTOCOL', cast=str, default='udp'),
-    choices=['udp', 'tcp']
-  )
-
-  parser.add_argument(
     "--port",
     required=False,
     default=config('PORT', cast=int, default=6047),
@@ -103,7 +96,6 @@ if __name__ == '__main__':
 
   logging.basicConfig(format='[AudioStream SERVER] - %(levelname)s | %(message)s', level=args.loglevel)
 
-  logging.info(f"Protocol: {args.protocol.upper()}")
   logging.info(f"Port: {args.port}")
   logging.info(f"Size: {args.size} ms")
   logging.info(f"Device: {args.device}")

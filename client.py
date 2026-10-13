@@ -75,13 +75,6 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="AudioStream client")
 
   parser.add_argument(
-    "--protocol",
-    required=False,
-    default=config('PROTOCOL', cast=str, default='udp'),
-    choices=['udp', 'tcp']
-  )
-
-  parser.add_argument(
     "--host",
     required=False,
     default=config("HOST", cast=str, default="localhost")
@@ -123,7 +116,6 @@ if __name__ == '__main__':
 
   logging.basicConfig(format='[AudioStream CLIENT] - %(levelname)s | %(message)s', level=args.loglevel)
 
-  logging.info(f"Protocol: {args.protocol.upper()}")
   logging.info(f"Host: {args.host}")
   logging.info(f"Port: {args.port}")
   logging.info(f"Size: {args.size} ms")
