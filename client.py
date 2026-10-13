@@ -12,7 +12,7 @@ from time import sleep
 
 def initialize_record_stream():
   global record_stream
-  
+
   if record_stream:
     record_stream.stop_stream()
     record_stream = None
