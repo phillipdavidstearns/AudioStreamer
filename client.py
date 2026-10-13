@@ -35,7 +35,7 @@ def initialize_record_stream():
     sys.exit(1)
 
 async def audio_stream_client(host='localhost', port=12345):
-  global network_writer, sendQueue
+  global network_writer, sendQueue, record_stream
   while True:
     while network_writer == None:
       try:
