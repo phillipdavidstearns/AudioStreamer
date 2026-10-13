@@ -12,6 +12,11 @@ from time import sleep
 
 def initialize_record_stream():
   global record_stream
+  
+  if record_stream:
+    record_stream.stop_stream()
+    record_stream = None
+
   try:
     pyaudioObj = pyaudio.PyAudio()
     record_stream = pyaudioObj.open(
@@ -49,6 +54,7 @@ async def audio_stream_client(host='localhost', port=12345):
     except Exception as e:
       logging.error(f"While writing to socket: {e}")
       record_stream.stop_stream()
+      record_stream = None
       sendQueue = queue.Queue()
       network_writer = None
 

@@ -17,9 +17,9 @@ async def handle_client(reader, writer):
       logging.debug(f"Connection closed.")
       break
 
-async def start_server(port):
+async def start_server(host='localhost', port=12345):
   server = await asyncio.start_server(
-    handle_client, 'localhost', port, keep_alive=True
+    handle_client, host, port, keep_alive=True
   )
   async with server:
     await server.serve_forever()
@@ -61,6 +61,13 @@ if __name__ == '__main__':
   parser=argparse.ArgumentParser(description="AudioStream server")
 
   parser.add_argument(
+    "--host",
+    required=False,
+    default=config('SERVER_ADDRESS', cast=str, default='localhost'),
+    type=str
+  )
+
+  parser.add_argument(
     "--port",
     required=False,
     default=config('PORT', cast=int, default=6047),
@@ -96,6 +103,7 @@ if __name__ == '__main__':
 
   logging.basicConfig(format='[AudioStream SERVER] - %(levelname)s | %(message)s', level=args.loglevel)
 
+  logging.info(f"Server address: {args.host}")
   logging.info(f"Port: {args.port}")
   logging.info(f"Size: {args.size} ms")
   logging.info(f"Device: {args.device}")
@@ -129,4 +137,7 @@ if __name__ == '__main__':
     logging.error(f"While inializing audio device: {e}")
     sys.exit(1)
 
-  asyncio.run(start_server(args.port))
+  asyncio.run(start_server(
+    host=args.host,
+    port=args.port
+  ))
