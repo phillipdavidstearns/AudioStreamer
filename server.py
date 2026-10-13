@@ -7,6 +7,45 @@ import logging
 from decouple import config
 from time import sleep
 
+#================================================================
+# PyAudio Functions
+#================================================================
+
+# Closes the audio stream
+def close_play_stream():
+  global play_stream
+  logging.debug(f"Closing play stream.")
+  if play_stream:
+    play_stream.close()
+    play_stream = None
+
+#----------------------------------------------------------------
+
+# Terminates the PyAudio session and releases resources
+def terminate_pyaudio():
+  logging.debug(f"Terminating PyAudio Session.")
+  global pyaudio_obj
+  if pyaudio_obj:
+    pyaudio_obj.terminate()
+    pyaudio_obj = None
+
+#----------------------------------------------------------------
+
+# Closes the active record stream and terminates pyaudio pbject
+# Resets global variables to None
+def shutdown_pyaudio():
+  logging.info(f"Shutting down PyAudio.")
+  close_play_stream()
+  terminate_pyaudio()
+
+#----------------------------------------------------------------
+
+def play(data, frame_count, time_info, status):
+  data = buffer.get(frame_count * WIDTH)
+  return(bytes(data), pyaudio.paContinue)
+
+#================================================================
+
 async def handle_client(reader, writer):
   logging.debug(f"Connection established.")
   buffer.clear()
@@ -24,15 +63,15 @@ async def start_server(host='localhost', port=12345):
   async with server:
     await server.serve_forever()
 
+#================================================================
+
 # signal handler
 def handler(signum, frame):
   logging.info("Exiting the program")
-  playStream.stop_stream()
+  shutdown_pyaudio()
   sys.exit(0)
 
-def play(data, frame_count, time_info, status):
-  data = buffer.get(frame_count * WIDTH)
-  return(bytes(data), pyaudio.paContinue)
+#================================================================
 
 class Buffer:
   def __init__(self, size_limit=7056000):
@@ -53,9 +92,13 @@ class Buffer:
     if len(self.buffer) < self.size_limit:
       self.buffer.extend(data)
 
+#================================================================
+
 if __name__ == '__main__':
   # signal handler
   signal.signal(signal.SIGINT, handler)
+
+  #----------------------------------------------------------------
 
   # command line arguments
   parser=argparse.ArgumentParser(description="AudioStream server")
@@ -108,6 +151,8 @@ if __name__ == '__main__':
   logging.info(f"Size: {args.size} ms")
   logging.info(f"Device: {args.device}")
 
+  #----------------------------------------------------------------
+
   # audio setup
   WIDTH = args.width
   FORMAT = pyaudio.get_format_from_width(WIDTH)
@@ -116,13 +161,14 @@ if __name__ == '__main__':
   CHUNK = 441 # 10 ms
   NUMCHUNKS = int(args.size / 10)
 
-  server = None
   buffer = Buffer()
+
+  #----------------------------------------------------------------
 
   try:
 
-    pyaudioObj = pyaudio.PyAudio()
-    playStream = pyaudioObj.open(
+    pyaudio_obj = pyaudio.PyAudio()
+    play_stream = pyaudio_obj.open(
       format=FORMAT,
       channels=CHANNELS,
       rate=RATE,
@@ -135,7 +181,10 @@ if __name__ == '__main__':
     logging.info("PyAudio Device Initialized")
   except Exception as e:
     logging.error(f"While inializing audio device: {e}")
+    shutdown_pyaudio()
     sys.exit(1)
+
+  #----------------------------------------------------------------
 
   asyncio.run(start_server(
     host=args.host,

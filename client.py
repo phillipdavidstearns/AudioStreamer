@@ -9,17 +9,53 @@ from threading import Thread, Lock
 from decouple import config
 from time import sleep
 
+#================================================================
+# PyAudio Functions
+#================================================================
 
-def initialize_record_stream():
+# Closes the audio stream
+def close_record_stream():
   global record_stream
-
+  logging.debug(f"Closing record stream.")
   if record_stream:
-    record_stream.stop_stream()
+    record_stream.close()
     record_stream = None
 
+#----------------------------------------------------------------
+
+# Terminates the PyAudio session and releases resources
+def terminate_pyaudio():
+  logging.debug(f"Terminating PyAudio Session.")
+  global pyaudio_obj
+  if pyaudio_obj:
+    pyaudio_obj.terminate()
+    pyaudio_obj = None
+
+#----------------------------------------------------------------
+
+# Closes the active record stream and terminates pyaudio pbject
+# Resets global variables to None
+def shutdown_pyaudio():
+  logging.info(f"Shutting down PyAudio.")
+  close_record_stream()
+  terminate_pyaudio()
+
+#----------------------------------------------------------------
+
+# The callback function used to fetch audio from the record stream when it is available
+def record(in_data, frame_count, time_info,  status):
+  if network_writer:
+    sendQueue.put(in_data)
+  return (in_data, pyaudio.paContinue)
+
+#----------------------------------------------------------------
+
+def initialize_record_stream():
+  global pyaudio_obj, record_stream
+
   try:
-    pyaudioObj = pyaudio.PyAudio()
-    record_stream = pyaudioObj.open(
+    pyaudio_obj = pyaudio.PyAudio()
+    record_stream = pyaudio_obj.open(
       format=FORMAT,
       channels=CHANNELS,
       rate=RATE,
@@ -34,8 +70,10 @@ def initialize_record_stream():
     logging.error(f"While inializing audio device: {e}")
     sys.exit(1)
 
+#================================================================
+
 async def audio_stream_client(host='localhost', port=12345):
-  global network_writer, sendQueue, record_stream
+  global network_writer, sendQueue, record_stream, pyaudio_obj
   while True:
     while network_writer == None:
       try:
@@ -53,29 +91,29 @@ async def audio_stream_client(host='localhost', port=12345):
           await network_writer.drain()
     except Exception as e:
       logging.error(f"While writing to socket: {e}")
-      record_stream.stop_stream()
-      record_stream = None
+      shutdown_pyaudio()
       sendQueue = queue.Queue()
       network_writer = None
+
+
+#================================================================
 
 # signal handler
 def handler(signum, frame):
   global record_stream
   logging.info("Exiting the program")
-  record_stream.stop_stream()
+  shutdown_pyaudio()
   if network_writer: network_writer.close()
   sys.exit(0) 
 
-# define the callback function (called everytime there is input data)
-def record(in_data, frame_count, time_info,  status):
-  if network_writer:
-    sendQueue.put(in_data)
-  return (in_data, pyaudio.paContinue)
+#================================================================
 
 if __name__ == '__main__':
 
   # signal handler
   signal.signal(signal.SIGINT, handler)
+
+  #----------------------------------------------------------------
 
   # command line arguments
   parser = argparse.ArgumentParser(description="AudioStream client")
@@ -126,6 +164,8 @@ if __name__ == '__main__':
   logging.info(f"Port: {args.port}")
   logging.info(f"Size: {args.size} ms")
 
+  #----------------------------------------------------------------
+
   # audio setup
   WIDTH = args.width
   FORMAT = pyaudio.get_format_from_width(WIDTH)
@@ -134,9 +174,12 @@ if __name__ == '__main__':
   CHUNK = 441 # 10 ms
   NUMCHUNKS = int(args.size / 10)
 
+  pyaudio_obj = None
   record_stream = None
   network_writer = None
   sendQueue = queue.Queue() # store the audio data to send
+
+  #----------------------------------------------------------------
 
   asyncio.run(audio_stream_client(
     host=args.host,
