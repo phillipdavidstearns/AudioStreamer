@@ -1,0 +1,12 @@
+---
+- hosts: mics
+  become: yes
+  gather_facts: false
+  tasks:
+
+  - name: Add dtoverlay for DAC+ ADC
+    ansible.builtin.lineinfile:
+      path: /boot/firmware/config.txt
+      state: present
+      insertafter: '[all]'
+      line: 'dtoverlay=hifiberry-dacplusadc'

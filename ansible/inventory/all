@@ -1,0 +1,16 @@
+[mics]
+mic-01 ansible_host=mic-01.local host=rcvr-01.local
+mic-02 ansible_host=mic-02.local host=rcvr-02.local
+mic-03 ansible_host=mic-03.local host=rcvr-03.local
+mic-04 ansible_host=mic-04.local host=rcvr-04.local
+mic-05 ansible_host=mic-05.local host=rcvr-05.local
+mic-06 ansible_host=mic-06.local host=rcvr-06.local
+
+[receivers]
+rcvr-[01:06].local host=0.0.0.0
+
+[all:vars]
+port_number=6047
+input_device=1
+output_device=1
+protocol=tcp

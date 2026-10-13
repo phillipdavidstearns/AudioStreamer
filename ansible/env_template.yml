@@ -1,0 +1,11 @@
+---
+- name: Write .env files
+  hosts: all
+  become: false
+  gather_facts: false
+
+  tasks:
+  - name: Write .env file
+    ansible.builtin.template:
+      src: templates/env.j2
+      dest: /home/phillipstearns/AudioStreamer/.env

@@ -1,0 +1,12 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+
+  - name: Install apps and dev libraries
+    ansible.builtin.apt:
+      update_cache: yes
+      pkg:
+      - git
+      - portaudio19-dev
+      - python3-dev

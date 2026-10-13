@@ -1,53 +1,86 @@
+import asyncio
 import socket
 import argparse
 import signal
 import pyaudio
 import sys
 import logging
+from threading import Thread, Lock
 from decouple import config
+from time import sleep
+
+'''
+How should this work?
+Start PyAudio Stream using the callback method to playback audio received over the network.
+Open a socket connection and wait for incomming data.
+
+Threading vs Multiprocess?
+
+TCP means all data arrives in sequence, but a little more overhead/latency
+  - If there's no connection or if an exception is raised, output silence
+    - Flag active connection
+      - if exception is raised and flag was active, reset the socket 
+      - clear the flag
+
+  - If the buffer doesn't contain a full chunk
+    - write zeros to audio buffer?
+    - wait until full chunk is available?
+    - zero-pad incomplete chunk?
+    - make each a argument/setting choice?
+
+Use TinyDragon as an example of how to handle the incomming data.
+  - Perhaps the queue module ixn client.py is useful.
+
+Basically there are two I/O related tasks:
+- Receive data from a connected client and put it in a queue (non-blocking process/thread)
+- Read data out of the queue into the audio buffer (callbacks)
+'''
+
+async def handle_client(reader, writer):
+  while True:
+    if data := await reader.read(65536):
+      buffer.put(data)
+    else:
+      break
+
+async def start_server(port):
+  server = await asyncio .start_server(
+    handle_client, '0.0.0.0', port
+  )
+  async with server:
+    await server.serve_forever()
 
 # signal handler
 def handler(signum, frame):
-  global playStream, server_socket
   logging.info("Exiting the program")
   playStream.stop_stream()
-  server_socket.close()
   sys.exit(0)
 
-def recvData():
-  global expectedSeqNum, playStream, silenceData, server_socket, connection
+def play(data, frame_count, time_info, status):
+  logging.debug(f"PyAudio stream wants {frame_count} frames.")
+  data = buffer.get(frame_count * WIDTH)
+  return(bytes(data), pyaudio.paContinue)
 
-  logging.debug(f"Expecting Sequence #{expectedSeqNum}")
+class Buffer:
+  def __init__(self, size_limit=7056000):
+    self.buffer = bytearray()
+    self.size_limit = size_limit
 
-  if args.protocol == 'udp':
-    data, address = server_socket.recvfrom(CHUNK * NUMCHUNKS * 2 + 2)
-  else:
-    data = connection.recv(CHUNK * NUMCHUNKS * 2 + 2)
-    while len(data) < CHUNK * NUMCHUNKS * 2 + 2:
-      data += connection.recv(CHUNK * NUMCHUNKS * 2 + 2 - len(data))
+  def clearBuffer(self):
+    self.buffer = bytearray()
 
-  sequenceNumber = int.from_bytes(data[:2], byteorder="little", signed=False)
-  audioData = data[2:]
+  def get(self, qty_bytes):
+    data = self.buffer[:qty_bytes]
+    self.buffer = self.buffer[qty_bytes:]
+    data += bytes([0]) * (qty_bytes - len(data))
+    return data
 
-  if expectedSeqNum == sequenceNumber:
-    # play
-    logging.debug(f"Received Sequence #{sequenceNumber} ({len(data)} bytes)")
-    playStream.write(audioData)
-
-    expectedSeqNum = (expectedSeqNum + 1) % 65536
-  else:
-    logging.debug(f"Received Out of Sequence # {sequenceNumber} ({len(data)} bytes)")
-    # play silence
-    playStream.write(silenceData)
-
-    # handle out of sequence
-    if sequenceNumber > expectedSeqNum:
-      expectedSeqNum = sequenceNumber + 1
-    # handle dropped connection
-    elif sequenceNumber < expectedSeqNum:
-      expectedSeqNum = sequenceNumber
+  def put(self, data):
+    if len(self.buffer) < self.size_limit:
+      self.buffer.extend(data)
 
 if __name__ == '__main__':
+  buffer = Buffer()
 
   # signal handler
   signal.signal(signal.SIGINT, handler)
@@ -67,6 +100,14 @@ if __name__ == '__main__':
     required=False,
     default=config('PORT', cast=int, default=6047),
     type=int
+  )
+
+  parser.add_argument(
+    "--width",
+    required=False,
+    default=2,
+    type=int,
+    choices=range(1,4)
   )
 
   parser.add_argument("--size", required=False, default=10, type=int, choices=range(10, 151, 10))
@@ -93,9 +134,11 @@ if __name__ == '__main__':
   logging.info(f"Protocol: {args.protocol.upper()}")
   logging.info(f"Port: {args.port}")
   logging.info(f"Size: {args.size} ms")
+  logging.info(f"Device: {args.device}")
 
   # audio setup
-  FORMAT = pyaudio.paInt16
+  WIDTH = args.width
+  FORMAT = pyaudio.get_format_from_width(WIDTH)
   CHANNELS = 1
   RATE = 44100
   CHUNK = 441 # 10 ms
@@ -103,6 +146,7 @@ if __name__ == '__main__':
 
   silence = 0
   silenceData = silence.to_bytes(2) * CHUNK * NUMCHUNKS
+  server = None
 
   try:
 
@@ -114,7 +158,8 @@ if __name__ == '__main__':
       rate=RATE,
       output=True,
       frames_per_buffer=CHUNK * NUMCHUNKS,
-      output_device_index=args.device
+      output_device_index=args.device,
+      stream_callback=play
     )
 
     logging.info("PyAudio Device Initialized")
@@ -122,23 +167,4 @@ if __name__ == '__main__':
     logging.error(f"While inializing audio device: {e}")
     sys.exit(1)
 
-  try:
-    # socket
-    if args.protocol == 'udp':
-      server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      server_socket.bind(('', args.port))
-    else:
-      server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      server_socket.bind(('', args.port))
-      server_socket.listen()
-      connection, source = server_socket.accept()
-
-    logging.info("Socket Initialized")
-  except Exception as e:
-    logging.error(f"While initializing socket: {e}")
-    sys.exit(1)
-
-  expectedSeqNum = 0
-
-  while True:
-    recvData()
+  asyncio.run(start_server(args.port))

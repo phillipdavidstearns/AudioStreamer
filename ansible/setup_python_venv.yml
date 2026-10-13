@@ -1,0 +1,25 @@
+---
+- name: Set up python virtual environment
+  hosts: all
+  become: false
+  gather_facts: false
+
+  vars:
+    venv_dir: /home/phillipstearns/venv
+    python_version: python3
+
+  tasks:
+
+    - name: Check if virtual environment directory exists
+      stat:
+        path: "{{ venv_dir }}"
+      register: register_name
+
+    - name: Create virtual Environment
+      ansible.builtin.command:
+        cmd: "{{ python_version }} -m venv {{ venv_dir }}"
+      when: not register_name.stat.exists
+
+    - name: Install packages
+      ansible.builtin.command:
+        cmd: "{{ venv_dir }}/bin/pip install pyaudio python-decouple"
