@@ -75,15 +75,19 @@ def initialize_record_stream():
 #================================================================
 
 async def audio_stream_client(host='localhost', port=12345):
+  logging.info(f"Starting network stream.")
   global network_writer, send_queue
   while True:
     while network_writer == None:
       try:
         reader, network_writer = await asyncio.open_connection(host, port)
+      except OSError as e:
+        logging.debug(f"OSError: {e}")
       except Exception as e:
         logging.error(f"While establishing server connection: {e}")
       await asyncio.sleep(1)
 
+    logging.info(f"Connected to server @ {host}:{port}.")
     initialize_record_stream()
 
     try:
