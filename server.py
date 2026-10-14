@@ -47,7 +47,7 @@ def play(data, frame_count, time_info, status):
 #================================================================
 
 async def handle_client(reader, writer):
-  logging.debug(f"Connection established.")
+  logging.info(f"Connection established.")
   buffer.clear()
   while True:
     try:
@@ -55,7 +55,7 @@ async def handle_client(reader, writer):
         if data := await reader.read(65536):
           buffer.put(data)
         else:
-          logging.debug(f"Connection closed.")
+          logging.info(f"Connection closed.")
           break
     except asyncio.TimeoutError as e:
       logging.error(f"Connection timed out.")
@@ -178,7 +178,6 @@ if __name__ == '__main__':
   #----------------------------------------------------------------
 
   try:
-
     pyaudio_obj = pyaudio.PyAudio()
     play_stream = pyaudio_obj.open(
       format=FORMAT,

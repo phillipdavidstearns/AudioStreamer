@@ -7,10 +7,11 @@ mic-05 ansible_host=mic-05.local host=rcvr-05.local
 mic-06 ansible_host=mic-06.local host=rcvr-06.local
 
 [receivers]
-rcvr-[01:06].local host=0.0.0.0
+rcvr-[01:06].local host=localhost
 
 [all:vars]
+server_address=0.0.0.0
 port_number=6047
-input_device=1
-output_device=1
+input_device=0
+output_device=0
 protocol=tcp

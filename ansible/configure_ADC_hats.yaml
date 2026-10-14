@@ -11,14 +11,16 @@
       insertafter: '[all]'
       line: 'dtoverlay=hifiberry-dacplusadc'
 
-  - name: Disable headphone HDMI audio
-    ansible.builtin.replace:
-      dest: /boot/firmware/config.txt
-      regexp: '^dtparam=audio=on'
-      replace: '#dtparam=audio=on'
+  - name: Disable HDMI audio
+    ansible.builtin.lineinfile:
+      path: /boot/firmware/config.txt
+      state: present
+      regexp: '^dtoverlay=vc4-kms-v3d*'
+      line: 'dtoverlay=vc4-kms-v3d,noaudio'
 
   - name: Disable headphone jack audio
-    ansible.builtin.replace:
-      dest: /boot/firmware/config.txt
-      regexp: 'dtoverlay=vc4-kms-v3d'
-      replace: 'dtoverlay=vc4-kms-v3d,noaudio'
+    ansible.builtin.lineinfile:
+      path: /boot/firmware/config.txt
+      state: present
+      regexp: '^dtparam=audio=on*'
+      line: '#dtparam=audio=on'

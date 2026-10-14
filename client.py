@@ -44,14 +44,16 @@ def shutdown_pyaudio():
 
 # The callback function used to fetch audio from the record stream when it is available
 def record(in_data, frame_count, time_info,  status):
-  if network_writer:
-    sendQueue.put(in_data)
+  if network_writer and send_queue:
+    send_queue.put(in_data)
   return (in_data, pyaudio.paContinue)
 
 #----------------------------------------------------------------
 
 def initialize_record_stream():
-  global pyaudio_obj, record_stream
+  global pyaudio_obj, record_stream, send_queue
+
+  send_queue = queue.Queue()
 
   try:
     pyaudio_obj = pyaudio.PyAudio()
@@ -73,7 +75,7 @@ def initialize_record_stream():
 #================================================================
 
 async def audio_stream_client(host='localhost', port=12345):
-  global network_writer, sendQueue, record_stream, pyaudio_obj
+  global network_writer, send_queue
   while True:
     while network_writer == None:
       try:
@@ -86,21 +88,20 @@ async def audio_stream_client(host='localhost', port=12345):
 
     try:
       while True:
-        if data := sendQueue.get():
+        if data := send_queue.get():
           network_writer.write(data)
           await network_writer.drain()
     except Exception as e:
       logging.error(f"While writing to socket: {e}")
-      shutdown_pyaudio()
-      sendQueue = queue.Queue()
       network_writer = None
+      send_queue = None
+      shutdown_pyaudio()
 
 
 #================================================================
 
 # signal handler
 def handler(signum, frame):
-  global record_stream
   logging.info("Exiting the program")
   shutdown_pyaudio()
   if network_writer: network_writer.close()
@@ -177,7 +178,7 @@ if __name__ == '__main__':
   pyaudio_obj = None
   record_stream = None
   network_writer = None
-  sendQueue = queue.Queue() # store the audio data to send
+  send_queue = None
 
   #----------------------------------------------------------------
 

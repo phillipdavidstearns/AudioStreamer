@@ -25,18 +25,18 @@
       conn_reload: true
       state: present
 
-  # - name: Add nmcli configuration for Clyfford Still
-  #   community.general.nmcli:
-  #     type: wifi
-  #     conn_name: "Clyfford"
-  #     ifname: wlan0
-  #     ssid: RedLineMain
-  #     wifi_sec:
-  #       key-mgmt: wpa-psk
-  #       psk: "RedLine2350"
-  #     autoconnect: true
-  #     conn_reload: true
-  #     state: present
+  - name: Add nmcli configuration for Clyfford Still
+    community.general.nmcli:
+      type: wifi
+      conn_name: "Clyfford"
+      ifname: wlan0
+      ssid: Clyfford
+      wifi_sec:
+        key-mgmt: wpa-psk
+        psk: "Clyfford2@2E"
+      autoconnect: true
+      conn_reload: true
+      state: present
 
   - name: Reload and enable connection
     community.general.nmcli:
