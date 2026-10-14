@@ -50,18 +50,30 @@ async def handle_client(reader, writer):
   logging.debug(f"Connection established.")
   buffer.clear()
   while True:
-    if data := await reader.read(65536):
-      buffer.put(data)
-    else:
-      logging.debug(f"Connection closed.")
+    try:
+      async with asyncio.timeout(5):
+        if data := await reader.read(65536):
+          buffer.put(data)
+        else:
+          logging.debug(f"Connection closed.")
+          break
+    except asyncio.TimeoutError as e:
+      logging.error(f"Connection timed out.")
+      break
+    except Exception as e:
+      logging.error(f"While handling client: {e}")
       break
 
 async def start_server(host='localhost', port=12345):
   server = await asyncio.start_server(
     handle_client, host, port, keep_alive=True
   )
-  async with server:
-    await server.serve_forever()
+
+  try:
+    async with server:
+      await server.serve_forever()
+  except Exception as e:
+    loggin.error(f"While running server: {e}")
 
 #================================================================
 

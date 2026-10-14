@@ -1,0 +1,45 @@
+---
+- name: Set up WiFi connections
+  hosts: all
+  become: true
+  
+  tasks:
+  - name: Set WiFi Locale
+    ansible.builtin.command:
+      cmd: 'sudo raspi-config nonint do_wifi_country US'
+
+  - name: Unblock WiFi
+    ansible.builtin.command:
+      cmd: 'sudo rfkill unblock wifi'
+
+  - name: Add nmcli configuration for RedLine
+    community.general.nmcli:
+      type: wifi
+      conn_name: "RedLineMain"
+      ifname: wlan0
+      ssid: RedLineMain
+      wifi_sec:
+        key-mgmt: wpa-psk
+        psk: "RedLine2350"
+      autoconnect: true
+      conn_reload: true
+      state: present
+
+  # - name: Add nmcli configuration for Clyfford Still
+  #   community.general.nmcli:
+  #     type: wifi
+  #     conn_name: "Clyfford"
+  #     ifname: wlan0
+  #     ssid: RedLineMain
+  #     wifi_sec:
+  #       key-mgmt: wpa-psk
+  #       psk: "RedLine2350"
+  #     autoconnect: true
+  #     conn_reload: true
+  #     state: present
+
+  - name: Reload and enable connection
+    community.general.nmcli:
+      conn_name: "RedLineMain"
+      conn_reload: true
+      state: up

@@ -1,5 +1,5 @@
 ---
-- name: Setup python virtual environment
+- name: Clone AudioStreamer repo fork
   hosts: all
   become: false
   
