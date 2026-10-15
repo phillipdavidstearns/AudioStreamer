@@ -91,10 +91,9 @@ async def audio_stream_client(host='localhost', port=12345):
     initialize_record_stream()
 
     try:
-      while True:
-        if data := send_queue.get():
-          network_writer.write(data)
-          await network_writer.drain()
+      while data := send_queue.get():
+        network_writer.write(data)
+        await network_writer.drain()
     except Exception as e:
       logging.error(f"While writing to socket: {e}")
       network_writer = None

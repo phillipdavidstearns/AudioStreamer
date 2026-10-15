@@ -90,6 +90,7 @@ class Buffer:
     self.buffer = bytearray()
     self.size_limit = size_limit
 
+
   def clear(self):
     self.buffer = bytearray()
 
@@ -103,6 +104,9 @@ class Buffer:
   def put(self, data):
     if len(self.buffer) < self.size_limit:
       self.buffer.extend(data)
+
+  def size(self):
+    return len(self.buffer)
 
 #================================================================
 

@@ -1,0 +1,22 @@
+---
+- name: Restart client services
+  hosts: mics
+  gather_facts: false
+  become: true
+
+  tasks:
+  - name: Restart client
+    ansible.builtin.systemd:
+      name: 'othersounds-client.service'
+      state: stopped
+
+- name: Restart server services
+  hosts: receivers
+  gather_facts: false
+  become: true
+
+  tasks:
+  - name: Restart server
+    ansible.builtin.systemd:
+      name: 'othersounds-server.service'
+      state: stopped
