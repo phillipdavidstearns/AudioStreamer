@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Streamed Microphone Server
+After=network-online.target
+
+[Service]
+ExecStart=/home/phillipstearns/venv/bin/python3 /home/phillipstearns/AudioStreamer/server.py
+Restart=on-success
+RestartPreventExitStatus=SIGTERM SIGKILL
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

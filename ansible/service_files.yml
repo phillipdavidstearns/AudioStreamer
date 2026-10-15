@@ -1,0 +1,41 @@
+---
+- name: Set up client systemd unit files
+  hosts: mics
+  gather_facts: false
+  become: true
+  
+  tasks:
+  - name: Copy client service file to remote
+    ansible.builtin.copy:
+      src: 'files/othersounds-client.service'
+      dest: '/lib/systemd/system/othersounds-client.service'
+
+  - name: Enable and start client
+    ansible.builtin.systemd:
+      name: 'othersounds-client.service'
+      daemon_reload: true
+      enabled: true
+      state: started
+
+- name: Set up server systemd unit files
+  hosts: receivers
+  gather_facts: false
+  become: true
+  
+  tasks:
+  - name: Copy server service file to remote
+    ansible.builtin.copy:
+      src: 'files/othersounds-server.service'
+      dest: '/lib/systemd/system/othersounds-server.service'
+
+  - name: remove client from servers
+    ansible.builtin.file:
+      dest: '/lib/systemd/system/othersounds-client.service'
+      state: absent
+
+  - name: Enable and start server
+    ansible.builtin.systemd:
+      name: 'othersounds-server.service'
+      daemon_reload: true
+      enabled: true
+      state: started
