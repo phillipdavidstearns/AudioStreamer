@@ -1,0 +1,10 @@
+---
+- name: Shutdown
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+  - name: Shutdown
+    ansible.builtin.command:
+      cmd: 'sudo shutdown -h now'

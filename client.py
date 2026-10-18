@@ -3,11 +3,9 @@ import argparse
 import signal
 import pyaudio
 import sys
-import queue
 import logging
-from threading import Thread, Lock
 from decouple import config
-from time import sleep
+from buffer import Buffer
 
 #================================================================
 # PyAudio Functions
@@ -44,16 +42,16 @@ def shutdown_pyaudio():
 
 # The callback function used to fetch audio from the record stream when it is available
 def record(in_data, frame_count, time_info,  status):
-  if network_writer and send_queue:
-    send_queue.put(in_data)
+  if network_writer:
+    buffer.put(in_data)
   return (in_data, pyaudio.paContinue)
 
 #----------------------------------------------------------------
 
 def initialize_record_stream():
-  global pyaudio_obj, record_stream, send_queue
+  global pyaudio_obj, record_stream
 
-  send_queue = queue.Queue()
+  buffer.clear()
 
   try:
     pyaudio_obj = pyaudio.PyAudio()
@@ -76,7 +74,9 @@ def initialize_record_stream():
 
 async def audio_stream_client(host='localhost', port=12345):
   logging.info(f"Starting network stream.")
-  global network_writer, send_queue
+
+  global network_writer
+
   while True:
     while network_writer == None:
       try:
@@ -88,16 +88,18 @@ async def audio_stream_client(host='localhost', port=12345):
       await asyncio.sleep(1)
 
     logging.info(f"Connected to server @ {host}:{port}.")
+
     initialize_record_stream()
 
     try:
-      while data := send_queue.get():
-        network_writer.write(data)
-        await network_writer.drain()
+      while network_writer:
+        if data := buffer.get(CHUNK * WIDTH):
+          network_writer.write(data)
+          await network_writer.drain()
+          await asyncio.sleep(1 / (2 * CHUNK * WIDTH))
     except Exception as e:
       logging.error(f"While writing to socket: {e}")
       network_writer = None
-      send_queue = None
       shutdown_pyaudio()
 
 
@@ -162,8 +164,10 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  logging.basicConfig(format='[AudioStream CLIENT] - %(levelname)s | %(message)s', level=args.loglevel)
-
+  logging.basicConfig(
+    format='[AudioStream CLIENT] - %(levelname)s | %(message)s',
+    level=args.loglevel
+  )
   logging.info(f"Host: {args.host}")
   logging.info(f"Port: {args.port}")
   logging.info(f"Size: {args.size} ms")
@@ -181,7 +185,7 @@ if __name__ == '__main__':
   pyaudio_obj = None
   record_stream = None
   network_writer = None
-  send_queue = None
+  buffer = Buffer(zero_pad=False, send_empty=False)
 
   #----------------------------------------------------------------
 

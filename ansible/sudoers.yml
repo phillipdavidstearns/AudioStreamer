@@ -1,0 +1,17 @@
+---
+- name: Enable passwordless shutdown and reboot
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+  - name: Modify sudoers
+    community.general.sudoers:
+      name: 'Passwordless shutdown and reboot'
+      commands:
+        - /usr/sbin/shutdown
+        - /usr/sbin/reboot
+        - /usr/bin/systemctl
+      nopassword: true
+      user: phillipstearns
+      state: present

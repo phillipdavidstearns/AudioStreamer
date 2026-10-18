@@ -5,7 +5,7 @@ import pyaudio
 import sys
 import logging
 from decouple import config
-from time import sleep
+from buffer import Buffer
 
 #================================================================
 # PyAudio Functions
@@ -85,31 +85,6 @@ def handler(signum, frame):
 
 #================================================================
 
-class Buffer:
-  def __init__(self, size_limit=7056000):
-    self.buffer = bytearray()
-    self.size_limit = size_limit
-
-
-  def clear(self):
-    self.buffer = bytearray()
-
-  def get(self, qty_bytes):
-    data = self.buffer[:qty_bytes]
-    self.buffer = self.buffer[qty_bytes:]
-    if qty_bytes != len(data):
-      data += bytes([0]) * (qty_bytes - len(data))
-    return data
-
-  def put(self, data):
-    if len(self.buffer) < self.size_limit:
-      self.buffer.extend(data)
-
-  def size(self):
-    return len(self.buffer)
-
-#================================================================
-
 if __name__ == '__main__':
   # signal handler
   signal.signal(signal.SIGINT, handler)
@@ -160,8 +135,10 @@ if __name__ == '__main__':
 
   args=parser.parse_args()
 
-  logging.basicConfig(format='[AudioStream SERVER] - %(levelname)s | %(message)s', level=args.loglevel)
-
+  logging.basicConfig(
+    format='[AudioStream SERVER] - %(levelname)s | %(message)s',
+    level=args.loglevel
+  )
   logging.info(f"Server address: {args.host}")
   logging.info(f"Port: {args.port}")
   logging.info(f"Size: {args.size} ms")

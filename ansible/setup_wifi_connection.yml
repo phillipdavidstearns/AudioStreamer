@@ -22,6 +22,8 @@
         key-mgmt: wpa-psk
         psk: "RedLine2350"
       autoconnect: true
+      autoconnect_priority: 100
+      autoconnect_retries: 10
       conn_reload: true
       state: present
 
@@ -35,6 +37,23 @@
         key-mgmt: wpa-psk
         psk: "Clyfford2@2E"
       autoconnect: true
+      autoconnect_priority: 100
+      autoconnect_retries: 10
+      conn_reload: true
+      state: present
+
+  - name: Add nmcli configuration for Blowing Raspberries
+    community.general.nmcli:
+      type: wifi
+      conn_name: "Blowing Raspberries"
+      ifname: wlan0
+      ssid: Blowing Raspberries
+      wifi_sec:
+        key-mgmt: wpa-psk
+        psk: "oil & H2O don't mix"
+      autoconnect: true
+      autoconnect_priority: 0
+      autoconnect_retries: 10
       conn_reload: true
       state: present
 

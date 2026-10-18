@@ -2,7 +2,7 @@
 - name: Clone AudioStreamer repo fork
   hosts: all
   gather_facts: false
-  become: true
+  become: false
   
   tasks:
   - name: Git clone AudioStreamer repo
