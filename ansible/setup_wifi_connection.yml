@@ -20,7 +20,7 @@
       ssid: RedLineMain
       wifi_sec:
         key-mgmt: wpa-psk
-        psk: "RedLine2350"
+        psk: {{ redline_wifi_psk }}
       autoconnect: true
       autoconnect_priority: 100
       autoconnect_retries: 10
@@ -35,7 +35,7 @@
       ssid: Clyfford
       wifi_sec:
         key-mgmt: wpa-psk
-        psk: "Clyfford2@2E"
+        psk: {{ clyfford_wifi_psk }}
       autoconnect: true
       autoconnect_priority: 100
       autoconnect_retries: 10
@@ -55,7 +55,7 @@
       autoconnect_priority: 0
       autoconnect_retries: 10
       conn_reload: true
-      state: present
+      state: absent
 
   - name: Reload and enable connection
     community.general.nmcli:
