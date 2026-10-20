@@ -96,6 +96,7 @@ async def audio_stream_client(host='localhost', port=12345):
         if buffer.size() >= CHUNK * WIDTH:
           network_writer.write(buffer.get(CHUNK * WIDTH))
           await network_writer.drain()
+        await asyncio.sleep( 1 / (2 * CHUNK * WIDTH))
     except Exception as e:
       logging.error(f"While writing to socket: {e}")
       network_writer = None
@@ -188,7 +189,7 @@ if __name__ == '__main__':
   pyaudio_obj = None
   record_stream = None
   network_writer = None
-  buffer = Buffer(zero_pad=False, send_empty=False)
+  buffer = Buffer(zero_pad=False)
 
   #----------------------------------------------------------------
 
