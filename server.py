@@ -116,8 +116,6 @@ if __name__ == '__main__':
     choices=range(1,4)
   )
 
-  parser.add_argument("--size", required=False, default=10, type=int, choices=range(10, 151, 10))
-
   parser.add_argument(
     "--loglevel",
     required=False,
@@ -133,15 +131,22 @@ if __name__ == '__main__':
     type=int
   )
 
+  parser.add_argument(
+    "--blocksize",
+    required=False,
+    default=config('BLOCK_SIZE', cast=int, default=256),
+    type=int
+  )
+
   args=parser.parse_args()
 
   logging.basicConfig(
     format='[AudioStream SERVER] - %(levelname)s | %(message)s',
     level=args.loglevel
   )
+  logging.info(f"Block Size: {args.blocksize}")
   logging.info(f"Server address: {args.host}")
   logging.info(f"Port: {args.port}")
-  logging.info(f"Size: {args.size} ms")
   logging.info(f"Device: {args.device}")
 
   #----------------------------------------------------------------
@@ -151,10 +156,10 @@ if __name__ == '__main__':
   FORMAT = pyaudio.get_format_from_width(WIDTH)
   CHANNELS = 1
   RATE = 44100
-  CHUNK = 441 # 10 ms
-  NUMCHUNKS = int(args.size / 10)
-
+  CHUNK = args.blocksize # 10 ms
   buffer = Buffer()
+  pyaudio_obj = None
+  play_stream = None
 
   #----------------------------------------------------------------
 
@@ -165,7 +170,7 @@ if __name__ == '__main__':
       channels=CHANNELS,
       rate=RATE,
       output=True,
-      frames_per_buffer=CHUNK * NUMCHUNKS,
+      frames_per_buffer=CHUNK,
       output_device_index=args.device,
       stream_callback=play
     )

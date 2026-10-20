@@ -28,11 +28,6 @@
       src: 'files/othersounds-server.service'
       dest: '/lib/systemd/system/othersounds-server.service'
 
-  - name: remove client from servers
-    ansible.builtin.file:
-      dest: '/lib/systemd/system/othersounds-client.service'
-      state: absent
-
   - name: Enable and start server
     ansible.builtin.systemd:
       name: 'othersounds-server.service'

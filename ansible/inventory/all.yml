@@ -32,3 +32,4 @@ all:
     input_device: 0
     output_device: 0
     protocol: tcp
+    block_size: 256
